@@ -15,6 +15,9 @@ cards:
     - "master"
     - "travis-cards"
     - "broken-branch"
+    - "demo-master"
+    - "demo-develop"
+    - "demo-person-or-feature"
   colors:
     background: "#000000"
     top-border: "#F7E078"
