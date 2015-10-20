@@ -15,6 +15,6 @@ cards:
     - "master"
     - "travis-cards"
   colors:
-    background: "#1a237e"
+    background: "#000000"
     top-border: "#F7E078"
     passed: "#17c700"
