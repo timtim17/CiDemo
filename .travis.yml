@@ -10,3 +10,11 @@ deploy:
   file: build/libs/CiDemo.jar
   on:
     tags: true
+cards:
+  enabled:
+    - "master"
+    - "travis-cards"
+  colors:
+    background: "#1a237e"
+    top-border: "#F7E078"
+    passed: "#17c700"
