@@ -37,7 +37,7 @@ public class Robot extends IterativeRobot {
         SmartDashboard.putString("Git-Timestamp", vi.getTimestamp());
         SmartDashboard.putString("Git-Tag", vi.getTag());
         SmartDashboard.putString("Git-Author", vi.getAuthor());
-        
+        Smartdashboard.putstring("broken", "broken");	// more breaking builds
     }
 	
 	public void disabledPeriodic() {
