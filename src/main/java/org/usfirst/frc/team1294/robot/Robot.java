@@ -41,6 +41,10 @@ public class Robot extends IterativeRobot {
         invalid();
         
     }
+    
+    private void invalid(boolean hi) {
+    	return;
+    }
 	
 	public void disabledPeriodic() {
 		Scheduler.getInstance().run();
