@@ -38,6 +38,12 @@ public class Robot extends IterativeRobot {
         SmartDashboard.putString("Git-Tag", vi.getTag());
         SmartDashboard.putString("Git-Author", vi.getAuthor());
         
+        invalid();
+        
+    }
+    
+    private void invalid(boolean hi) {
+    	return;
     }
 	
 	public void disabledPeriodic() {
