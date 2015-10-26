@@ -1,6 +1,6 @@
 # CiDemo
 
-<a href="https://travis-ci.org/timtim17/CiDemo"><img alt="Build Status" title="Build Status" id="build-status-img"></a>
+<a href="https://travis-ci.org/timtim17/CiDemo"><img src="#" alt="Build Status" title="Build Status" id="build-status-img"></a>
 
 The purpose of this repo is to test Travis Ci in preperation for this years FRC season
 
