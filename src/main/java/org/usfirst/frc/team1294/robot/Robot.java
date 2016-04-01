@@ -32,11 +32,11 @@ public class Robot extends IterativeRobot {
 		oi = new OI();
         
         VersionInformation vi = new VersionInformation();
-        SmartDashboard.putString("Git-Branch", vi.getBranch());
         SmartDashboard.putString("Git-Hash", vi.getHash());
         SmartDashboard.putString("Git-Timestamp", vi.getTimestamp());
         SmartDashboard.putString("Git-Tag", vi.getTag());
         SmartDashboard.putString("Git-Author", vi.getAuthor());
+        SmartDashboard.putString("BuildType", vi.getBuildType());
         
     }
 	

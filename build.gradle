@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import org.ajoberstar.grgit.*
 
 buildscript {
   repositories {
@@ -23,6 +24,7 @@ buildscript {
     classpath group: 'jaci.openrio.gradle', name: 'GradleRIO', version: '2.0.1'			//Change this line if you wish to Update GradleRIO
     classpath 'org.codehaus.groovy.modules.http-builder:http-builder:0.5.2'
     classpath 'commons-io:commons-io:2.4'
+    classpath 'org.ajoberstar:grgit:1.4.1'
   }
 }
 
@@ -39,6 +41,11 @@ gradlerio.robotClass = "org.usfirst.frc.team1294.robot.Robot"   //The class for 
 gradlerio.team = "1294"                                   //Your FRC team number (e.g. 5333 for team 'Can't C#', or 47 for Chief Delphi)
 //gradlerio.rioIP = "10.53.33.20"                         //Uncomment to specify the IP address of the RIO
 
+eclipse {
+	project {
+		natures 'edu.wpi.first.wpilib.plugins.core.nature.FRCProjectNature'
+	}
+}
 
 dependencies {
 	compile files(System.properties['user.home'] + '/wpilib/java/extracted/library/lib/NetworkTables.jar')
@@ -49,26 +56,44 @@ def robotManifest = {
   attributes 'Main-Class': 'edu.wpi.first.wpilibj.RobotBase'
   attributes 'Robot-Class': gradlerio.robotClass
   attributes 'Class-Path': '.'
+  
+  def commitHash = "unknown"
+  def tag = "unknown"
+  def author = "unknown"
+  def timestamp = "unknown"
+  
   try {
-	  def branch = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()
-	  def revision = 'git rev-list --max-count 1 --timestamp HEAD'.execute().text.trim()
-	  def commitHash = revision.split(' ').last()
-	  def timestamp = revision ? new java.util.Date(java.util.concurrent.TimeUnit.SECONDS.toMillis(revision.split(' ').first() as long)).format("yyyy-MM-dd'T'HH:mm:ssZ") : null
-	  def tag = 'git describe'.execute().text.trim()
-	  def log = 'git log -1'.execute().text.trim()
-	  def author = (log =~ /(?m).*^.*Author: (.*)$/)[0][1]
+	  def grgit=Grgit.open(project.file('.'))
+	  commitHash = grgit.head().id
+	  tag = grgit.describe()
+	  def history = grgit.log(maxCommits: 1)
+	  author = "${history.author.name[0]} <${history.author.email[0]}>"
+	  timestamp = new java.util.Date(java.util.concurrent.TimeUnit.SECONDS.toMillis(history.time[0])).format("yyyy-MM-dd'T'HH:mm:ssZ")
 	  
-	  attributes 'Git-Branch' : branch
-	  attributes 'Git-Hash' : commitHash
-	  attributes 'Git-Timestamp' : timestamp
-	  attributes 'Git-Tag' : tag
-	  attributes 'Git-Author' : author
+	  if (!grgit.status().isClean()) {
+	  	commitHash += "uncommited code"
+	  	timestamp = "uncommited code"
+	  	tag = "uncommited code"
+	  	author = "uncommited code"
+	  }
   } catch (Exception ex) {
-   
+  
+  }
+  
+  attributes 'Git-Hash' : commitHash
+  attributes 'Git-Timestamp' : timestamp
+  attributes 'Git-Tag' : tag
+  attributes 'Git-Author' : author  
+  
+  if (project.hasProperty('ciBuild') && ciBuild.toBoolean()) {
+  	attributes 'BuildType' : 'Official Release'
+  } else {
+  	attributes 'BuildType' : 'Dev/Test Build'
   }
 }
 
 def downloadReleases() {
+	println "Checking github for releases"
 	File folder = new File("$buildDir/releases")
 	folder.mkdirs()
 	def http = new HTTPBuilder("https://api.github.com/repos/FRC-1294/CiDemo/releases")
@@ -80,10 +105,15 @@ def downloadReleases() {
 	        json.each {
 	        	if (it.assets[0] != null) {
 	        		File output = new File("$buildDir/releases/${it.tag_name}.jar")
-	    			def file = new FileOutputStream(output)
-	    			def out = new BufferedOutputStream(file)
-	    			out << new URL(it.assets[0].browser_download_url).openStream()
-	    			out.close()
+	        		if (output.exists()) { 
+	        			println "Already have ${it.tag_name}, skipping."
+	        		} else {
+	        			println "Downloading ${it.tag_name}"
+		    			def file = new FileOutputStream(output)
+		    			def out = new BufferedOutputStream(file)
+		    			out << new URL(it.assets[0].browser_download_url).openStream()
+		    			out.close()
+	    			}
         		}
 	        }
 	    }
@@ -105,20 +135,13 @@ def deployRelease() {
 			console.writer().println("[$i]: ${FilenameUtils.removeExtension(it.getName())}")
 		}
 		def releaseIndex = (console.readLine("Which release would you like to deploy? [0]")?:0).toInteger()
-		
-		def pathFrom = releases[releaseIndex].toPath()
-		def pathTo = Paths.get("${project.jar.archivePath}")
-		
-		def copyOptions = [StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES] as StandardCopyOption[]
-    
-		Files.copy(pathFrom, pathTo, copyOptions)
-		
+		def releasePath = releases[releaseIndex].toPath()
 		
 		try {
 			def host = "roboRIO-${project.gradlerio.team}.local"
 			println "Attempting to send new code to RoboRIO..."
 	
-		    project.ant.scp(file: "${project.jar.archivePath}",
+		    project.ant.scp(file: "${releasePath}",
 		    todir:"lvuser@${host}:${project.gradlerio.deployFile}",
 		    password:"",
 		    port:22,
@@ -151,7 +174,7 @@ def deployRelease() {
 		    
 		    println "Attempting to send new code to RoboRIO..."
 	
-		    project.ant.scp(file: "${project.jar.archivePath}",
+		    project.ant.scp(file: "${releasePath}",
 		    todir:"lvuser@${ip}:${project.gradlerio.deployFile}",
 		    password:"",
 		    port:22,

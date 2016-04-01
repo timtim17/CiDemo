@@ -17,10 +17,6 @@ public class VersionInformation {
 		this.manifest = loadManifest();
 	}
 	
-	public String getBranch() {
-		return getAttribute("Git-Branch");
-	}
-	
 	public String getHash() {
 		return getAttribute("Git-Hash");
 	}
@@ -35,6 +31,10 @@ public class VersionInformation {
 	
 	public String getAuthor() {
 		return getAttribute("Git-Author");
+	}
+	
+	public String getBuildType() {
+		return getAttribute("BuildType");
 	}
 	
 	private Manifest loadManifest() {
